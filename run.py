@@ -1,6 +1,6 @@
 import pprint
 
-import src.actor
+from src.activity_tools.objects import Actor
 
-actor = src.actor.Actor("example.com", "user", "my-key")
+actor = Actor("example.com", "user", "my-key")
 pprint.pprint(actor.run())

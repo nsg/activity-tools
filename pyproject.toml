@@ -1,6 +1,6 @@
 [project]
 name = "activity-tools"
-version = "0.0.5"
+version = "0.0.6"
 description = "ActivityPub building blocks for Python"
 readme = "README.md"
 license = { file = "LICENSE" }
