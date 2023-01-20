@@ -3,6 +3,7 @@ name = "activity-tools"
 version = "0.0.4"
 description = "ActivityPub building blocks for Python"
 readme = "README.md"
+license = { file = "LICENSE" }
 requires-python = ">=3.6"
 
 authors = [
