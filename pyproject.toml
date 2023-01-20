@@ -17,7 +17,8 @@ maintainers = [
 ]
 
 dependencies = [
-    "cryptography >= 39.0.0"
+    "cryptography >= 39.0.0",
+    "requests >= 2.28.0"
 ]
 
 classifiers = [

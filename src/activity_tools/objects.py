@@ -1,8 +1,23 @@
+import requests
+import re
+from urllib.parse import urlparse
+
+from cryptography.hazmat.primitives.serialization import load_pem_public_key
+
 from .misc import ImageAsset, PublicKey, Tags, Attachment
 
 class Actor:
 
-    def __init__(self, domain, username, public_key) -> None:
+    def __init__(self) -> None:
+        self.snake_pattern = re.compile(r'(?<!^)(?=[A-Z])')
+
+    def add_property_value(self, name, value):
+        self.attachment.add_property_value(name, value)
+
+    def add_emoji(self, name, url):
+        self.tag.add_emoji(name, url)
+
+    def create(self, domain, username, public_key) -> None:
         self.domain = domain
         self.username = username
         self.public_key = public_key
@@ -29,11 +44,52 @@ class Actor:
         self.attachment = Attachment()
         self.tag = Tags(self.domain)
 
-    def add_property_value(self, name, value):
-        self.attachment.add_property_value(name, value)
+    def fetch(self, actor_url):
+        self.actor_raw = {}
 
-    def add_emoji(self, name, url):
-        self.tag.add_emoji(name, url)
+        if not actor_url:
+            raise Exception("Actor URL is not set")
+
+        headers = {
+            'Content-Type': "application/activity+json",
+            'Accept': 'application/activity+json'
+        }
+
+        actor_resp = requests.get(actor_url, headers=headers)
+        if actor_resp.status_code > 299:
+            raise Exception(f"Actor {actor_url} responded with a {actor_resp.status_code}")
+
+        self.actor_raw = actor_resp.json()
+        urlid = urlparse(self.actor_raw['id'])
+
+        self.domain = urlid.netloc
+
+        keys = [
+            "publicKey",
+            "id",
+            "type",
+            "inbox",
+            "outbox",
+            "following",
+            "followers",
+            "discoverable",
+            "summary",
+            "published",
+            "name",
+            "preferredUsername",
+            "icon",
+            "image",
+            "manuallyApprovesFollowers",
+            "attachment",
+            "tag"
+        ]
+
+        for key in keys:
+            key_snake = self.snake_pattern.sub('_', key).lower()
+            setattr(self, key_snake, self.actor_raw.get(key))
+    
+    def get_public_key(self):
+        return load_pem_public_key(self.public_key['publicKeyPem'].encode("utf-8"))
 
     def run(self) -> dict:
         required_document = {
@@ -88,3 +144,30 @@ class WrapActivityStreamsObject:
         }
 
         return { **context, **self.object.run() }
+
+class InboxObject:
+
+    def __init__(self, data, signature) -> None:
+        self.id = data['id']
+        self.type = data['type'].lower()
+        self._actor = data['actor']
+        self._object = data['object']
+        self.signature = signature
+
+    @property
+    def actor(self):
+        return self._actor
+
+    @property
+    def object(self):
+        return self._object
+
+class Follow(InboxObject):
+
+    def __init__(self, data, signature) -> None:
+        super().__init__(data, signature)
+
+class Undo(InboxObject):
+
+    def __init__(self, data, signature) -> None:
+        super().__init__(data, signature)
