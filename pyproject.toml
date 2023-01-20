@@ -6,7 +6,8 @@ readme = "README.md"
 requires-python = ">=3.6"
 
 authors = [
-  "Stefan Berggren <pypi+activity-tools@enesge.eu>"
+  {email = "pypi+activity-tools@enesge.eu"},
+  {name = "Stefan Berggren"}
 ]
 
 maintainers = [
