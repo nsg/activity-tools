@@ -50,7 +50,6 @@ class Signature():
 
         message = []
         for h in self.signature_headers["headers"].split(" "):
-            print(h)
             if h == '(request-target)':
                 message.append(f"(request-target): post {self.inbox_path}")
             else:

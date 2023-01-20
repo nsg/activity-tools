@@ -1,5 +1,6 @@
 import requests
 import re
+import uuid
 from urllib.parse import urlparse
 
 from cryptography.hazmat.primitives.serialization import load_pem_public_key
@@ -17,10 +18,11 @@ class Actor:
     def add_emoji(self, name, url):
         self.tag.add_emoji(name, url)
 
-    def create(self, domain, username, public_key) -> None:
+    def create(self, domain: str, username: str, public_key_bytes: bytes) -> None:
         self.domain = domain
         self.username = username
-        self.public_key = public_key
+        self.public_key = None
+        self.public_key_pem = public_key_bytes.decode()
 
         self.id = f"https://{self.domain}/users/{self.username}"
         self.type = "Person"
@@ -88,8 +90,10 @@ class Actor:
             key_snake = self.snake_pattern.sub('_', key).lower()
             setattr(self, key_snake, self.actor_raw.get(key))
     
+        self.public_key_pem = self.public_key['publicKeyPem']
+
     def get_public_key(self):
-        return load_pem_public_key(self.public_key['publicKeyPem'].encode("utf-8"))
+        return load_pem_public_key(self.public_key_pem.encode())
 
     def run(self) -> dict:
         required_document = {
@@ -107,7 +111,11 @@ class Actor:
             "preferredUsername": self.preferred_username,
             "attachment": self.attachment.run(),
             "tag": self.tag.run(),
-            "publicKey": PublicKey(self.domain, self.username, "public key").run(),
+            "publicKey": PublicKey(
+                self.domain,
+                self.username,
+                self.public_key_pem
+            ).run(),
         }
 
         extra_values = {}
@@ -148,6 +156,7 @@ class WrapActivityStreamsObject:
 class InboxObject:
 
     def __init__(self, data, signature) -> None:
+        self.data = data
         self.id = data['id']
         self.type = data['type'].lower()
         self._actor = data['actor']
@@ -155,12 +164,19 @@ class InboxObject:
         self.signature = signature
 
     @property
-    def actor(self):
-        return self._actor
+    def actor(self) -> Actor:
+        actor = Actor()
+        actor.fetch(actor_url=self._actor)
+        return actor
 
     @property
-    def object(self):
-        return self._object
+    def object(self) -> Actor:
+        actor = Actor()
+        actor.fetch(actor_url=self._object)
+        return actor
+
+    def run(self):
+        return self.data
 
 class Follow(InboxObject):
 
@@ -171,3 +187,23 @@ class Undo(InboxObject):
 
     def __init__(self, data, signature) -> None:
         super().__init__(data, signature)
+
+class Accept:
+
+    def __init__(self, domain, username, object) -> None:
+        self.domain = domain
+        self.username = username
+        self.object = object
+
+        uuid_str = str(uuid.uuid4())
+        self.id = f"https://{self.domain}/users/{self.username}/accept/{uuid_str}"
+        self.actor = f"https://{self.domain}/users/{self.username}"
+
+    def run(self):
+        return {
+            "@context": "https://www.w3.org/ns/activitystreams",
+            "id": self.id,
+            "type": "Accept",
+            "actor": self.actor,
+            "object": self.object
+        }

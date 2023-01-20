@@ -13,16 +13,19 @@ $ uvicorn run:app --host 0.0.0.0 --workers 2
 
 import os
 import json
+import requests
 
 from fastapi import FastAPI, Request
 from fastapi.responses import RedirectResponse, JSONResponse, FileResponse
 
-from src.activity_tools.objects import Actor, WrapActivityStreamsObject, Follow, Undo
+from src.activity_tools.objects import Actor, WrapActivityStreamsObject, Follow, Undo, Accept
 from src.activity_tools.misc import PublicKey, WebFinger
 from src.activity_tools.headers import ContentTypes
 from src.activity_tools.inbox import Inbox
+from src.activity_tools.crypto import RSAKey
 
 DOMAIN = os.getenv("DOMAIN", "example.com")
+KEY = RSAKey("/tmp/key.pem")
 
 app = FastAPI(
     title="ActivityPub Example Application",
@@ -42,10 +45,9 @@ def webfinger(resource: str):
 
 @app.get("/users/{username}")
 def users(username: str):
-    public_key = "123"
 
     actor = Actor()
-    actor.create(DOMAIN, username, public_key)    
+    actor.create(DOMAIN, username, KEY.public_key)
     actor.followers = None
     actor.following = None
     actor.outbox = None
@@ -54,7 +56,7 @@ def users(username: str):
 
 @app.get("/users/{username}/key")
 def users(username: str):
-    public_key = "123"
+    public_key = KEY.public_key
     content = WrapActivityStreamsObject(PublicKey(DOMAIN, username, public_key)).run()
     return JSONResponse(content=content, headers=ContentTypes.activity)
 
@@ -75,7 +77,17 @@ async def inbox(username: str, request: Request):
     object = inbox.parse()
 
     if type(object) == Follow:
-        print("We got a follow request!")
+        accept = Accept(DOMAIN, username, object.run())
+
+        signature = {}
+
+        r = requests.post(
+            object.actor.inbox,
+            data=json.dumps(accept.run()),
+            headers={ **ContentTypes.activity, **signature }
+        )
+
+        print(r.status_code, r.content)
 
     elif type(object) == Undo:
         print("We got a undo request!")

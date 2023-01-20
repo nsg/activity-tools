@@ -1,4 +1,4 @@
-from .objects import Follow, Undo
+from .objects import Follow, Undo, InboxObject
 from .headers import Signature
 
 class Inbox:
@@ -15,7 +15,7 @@ class Inbox:
     def validate(self):
         return self.signature.validate()
 
-    def parse(self):
+    def parse(self) -> InboxObject:
         func_name = f"type_{self.data['type'].lower()}"
 
         if not hasattr(self, func_name):
