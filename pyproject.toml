@@ -4,7 +4,6 @@ version = "0.0.3"
 description = "ActivityPub building blocks for Python"
 readme = "README.md"
 requires-python = ">=3.6"
-license = "MIT"
 
 authors = [
   "Stefan Berggren <pypi+activity-tools@enesge.eu>"
