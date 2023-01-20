@@ -1,0 +1,28 @@
+[project]
+name = "activity-tools"
+version = "0.0.2"
+description = "ActivityPub building blocks for Python"
+readme = "README.md"
+requires-python = ">=3.6"
+
+authors = []
+
+maintainers = [
+  {email = "pypi+activity-tools@enesge.eu"},
+  {name = "Stefan Berggren"}
+]
+
+dependencies = [
+    "cryptography>39.0.0"
+]
+
+[project.optional-dependencies]
+test = [
+  "pytest>7.2.0"
+]
+
+[project.urls]
+homepage = "https://github.com/nsg/activity-tools"
+documentation = "https://github.com/nsg/activity-tools"
+repository = "https://github.com/nsg/activity-tools.git"
+changelog = "https://github.com/nsg/activity-tools/blob/master/CHANGELOG.md"
