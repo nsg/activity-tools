@@ -1,11 +1,14 @@
 [project]
 name = "activity-tools"
-version = "0.0.2"
+version = "0.0.3"
 description = "ActivityPub building blocks for Python"
 readme = "README.md"
 requires-python = ">=3.6"
+license = "MIT"
 
-authors = []
+authors = [
+  "Stefan Berggren <pypi+activity-tools@enesge.eu>"
+]
 
 maintainers = [
   {email = "pypi+activity-tools@enesge.eu"},
@@ -13,12 +16,12 @@ maintainers = [
 ]
 
 dependencies = [
-    "cryptography>39.0.0"
+    "cryptography>=39.0.0"
 ]
 
 [project.optional-dependencies]
 test = [
-  "pytest>7.2.0"
+  "pytest>=7.2.0"
 ]
 
 [project.urls]

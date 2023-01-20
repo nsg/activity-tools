@@ -1,3 +1,4 @@
 /dist
-/activity_tools.egg-info/
+/src/activity_tools.egg-info
 /build
+__pycache__
