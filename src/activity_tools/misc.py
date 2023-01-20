@@ -1,4 +1,4 @@
-
+import re
 
 class ImageAsset:
 
@@ -77,4 +77,30 @@ class PublicKey:
             "id": self.id,
             "owner": self.owner,
             "publicKeyPem": self.public_key,
+        }
+
+class WebFinger:
+
+    def __init__(self, domain, resource, actor_url=None) -> None:
+        self.domain = domain
+        self.resource = resource
+
+        m = re.match(r"^acct:(.+)@(.+)$", resource)
+        self.username  = m.group(1)
+
+        if actor_url:
+            self.actor_url = actor_url
+        else:
+            self.actor_url = f"https://{self.domain}/users/{self.username}"
+
+    def run(self) -> dict:
+        return {
+            "subject": self.resource,
+            "links": [
+                {
+                    "rel": "self",
+                    "type": "application/activity+json",
+                    "href": self.actor_url
+                }
+            ]
         }

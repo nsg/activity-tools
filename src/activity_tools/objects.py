@@ -44,9 +44,6 @@ class Actor:
             "id": self.id,
             "type": self.type,
             "inbox": self.inbox,
-            "outbox": self.outbox,
-            "following": self.following,
-            "followers": self.followers,
             "discoverable": self.discoverable,
             "summary": self.summary,
             "published": self.published,
@@ -68,4 +65,26 @@ class Actor:
         if self.manually_approves_followers:
             extra_values["manuallyApprovesFollowers"] = self.manually_approves_followers
 
+        if self.followers:
+            extra_values["followers"] = self.followers
+
+        if self.following:
+            extra_values["following"] = self.following
+
+        if self.outbox:
+            extra_values["outbox"] = self.outbox
+
         return { **required_document, **extra_values }
+
+
+class WrapActivityStreamsObject:
+
+    def __init__(self, object) -> None:
+        self.object = object
+
+    def run(self) -> dict:
+        context = {
+            "@context": "https://www.w3.org/ns/activitystreams"
+        }
+
+        return { **context, **self.object.run() }

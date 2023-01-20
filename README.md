@@ -26,3 +26,5 @@ actor.outbox = "https://localhost/actor/out"
 
 print(actor.run())
 ```
+
+For more examples see [run.py](https://github.com/nsg/activity-tools/blob/master/run.py).
