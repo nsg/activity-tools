@@ -2,29 +2,8 @@
 
 This project contains building blocks that can be used to create ActivityPub applications.
 
-## Actor
+**Project status**: Experimental, work in progress
 
-This generates basic actor that contains the needed bits to make Mastodon happy. 
+## Documentation
 
-```python
-from activity_tools.objects import Actor
-
-actor_domain = "example.com"
-actor_user = "alice"
-public_key = "..."
-
-actor = Actor(actor_domain, actor_user, public_key)
-
-print(actor.run())
-```
-
-A few values like inbox URL defaults to `https://{actor_domain}/users/{actor_user}/inbox`. You can change this easily:
-
-```
-actor.inbox = "https://localhost/actor/in"
-actor.outbox = "https://localhost/actor/out"
-
-print(actor.run())
-```
-
-For more examples see [run.py](https://github.com/nsg/activity-tools/blob/master/run.py).
+Feel free to browse the code, or read the generated [doumentation](https://nsg.github.io/activity-tools/activity_tools.html). If you prefer an example instead I have included a [run.py](https://github.com/nsg/activity-tools/blob/master/run.py) who runs a small sample instance.
