@@ -1,7 +1,8 @@
 import re
 import base64
+from typing import Tuple
 
-from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives.asymmetric import rsa
 
@@ -30,9 +31,34 @@ class SignatureBase:
     foo
     """
 
-    def __init__(self, key, from_actor: Actor, to_actor: Actor, message: dict) -> None:
-        if isinstance(key, rsa.RSAPublicKey):
-            pass
+    actor: Actor
+    """ 
+    The actor that signed the message. This should be the remote server
+    if we parse inbox messages, and the local server if we are going to
+    sign outgoing messages.
+
+    The actors private key will be used for sign messages, and the public
+    for signature verifications.
+    """
+
+    signature_headers: list[Tuple[str, str]]
+    """
+    A list of headers that are part of the signature and digest headers.
+    """
+
+    def __init__(
+        self,
+        actor: Actor,
+        message: dict,
+        headers: list[Tuple[str, str]]
+    ) -> None:
+        """
+        Create a instance of a signature object.
+        """
+
+        if not "Signature" in headers:
+            raise Exception("Signature is missing from headers")
+
 
 class Signature(SignatureBase):
 
