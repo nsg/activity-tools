@@ -5,7 +5,7 @@ name: website
 on:
   push:
     branches:
-      - main
+      - master
 
 permissions:
   contents: read
