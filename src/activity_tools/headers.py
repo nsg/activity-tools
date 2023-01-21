@@ -1,14 +1,18 @@
 import re
 import base64
+import hashlib
+import json
 from typing import Tuple
+from datetime import datetime
+from urllib.parse import urlparse
 
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding
-from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.hazmat.backends import default_backend
 
 from cryptography.exceptions import InvalidSignature
 
-from .objects import Actor
+from .objects import Actor, InboxObject
 
 class ContentTypes:
 
@@ -109,44 +113,100 @@ def verify_signature(
         headers: list[Tuple[str, str]],
         inbox_path: str
     ) -> bool:
-        """
-        This function verifies the signature on the specified request. This function
-        requires both the incoming object and HTTP headers with the path of the
-        receiving inbox. The function will return a boolean value.
 
-        arguments:
-        - object     - A dict representing the object we like to verify
-        - headers    - A list of tuples of strings representing our HTTP headers
-        - inbox_path - The path to our inbox, eg. /users/foo/inbox
-        """
+    """
+    This function verifies the signature on the specified request. This function
+    requires both the incoming object and HTTP headers with the path of the
+    receiving inbox. The function will return a boolean value.
 
-        # Analyze headers
-        headers_obj = Headers(headers)
+    arguments:
+    - object     - A dict representing the object we like to verify
+    - headers    - A list of tuples of strings representing our HTTP headers
+    - inbox_path - The path to our inbox, eg. /users/foo/inbox
+    """
 
-        # The extract the value of the signature header
-        signature_header: SignatureHeader = headers_obj.get('signature').value
+    # Analyze headers
+    headers_obj = Headers(headers)
 
-        # Extract the signature, confusually another header with the same name
-        # inside the signature header. Decode the signature.
-        signature = base64.b64decode(signature_header.signature)
+    # The extract the value of the signature header
+    signature_header: SignatureHeader = headers_obj.get('signature').value
 
-        # Fetch the remote actors, actor
-        actor = Actor.fetch(actor_url=object['actor'])
+    # Extract the signature, confusually another header with the same name
+    # inside the signature header. Decode the signature.
+    signature = base64.b64decode(signature_header.signature)
 
-        message = []
-        for h in signature_header.headers:
-            if h == '(request-target)':
-                message.append(f"(request-target): post {inbox_path}")
-            else:
-                message.append(f"{h}: {headers_obj.get(h).raw_value}")
+    # Fetch the remote actors, actor
+    actor = Actor.fetch(actor_url=object['actor'])
 
-        message = "\n".join(message).encode("utf-8")
+    message = []
+    for h in signature_header.headers:
+        if h == '(request-target)':
+            message.append(f"(request-target): post {inbox_path}")
+        else:
+            message.append(f"{h}: {headers_obj.get(h).raw_value}")
 
-        try:
-            actor.get_public_key().verify(
-                signature, message, padding.PKCS1v15(), hashes.SHA256()
-            )
-        except InvalidSignature:
-            return False
+    message = "\n".join(message).encode("utf-8")
 
-        return True
+    try:
+        actor.get_public_key().verify(
+            signature, message, padding.PKCS1v15(), hashes.SHA256()
+        )
+    except InvalidSignature:
+        return False
+
+    return True
+
+def make_signature(object: InboxObject):
+    """
+    This function generates a signature for the specified object.
+    """    
+
+    # The following is to sign the HTTP request as defined in HTTP Signatures.
+    private_key_text = open('/tmp/key.pem', 'rb').read() # load from file
+
+    private_key = serialization.load_pem_private_key(
+        private_key_text,
+        password=None,
+        backend=default_backend()
+    )
+
+    current_date = datetime.utcnow().strftime('%a, %d %b %Y %H:%M:%S GMT')
+
+    recipient_parsed = urlparse(object.actor.inbox)
+    recipient_host = recipient_parsed.netloc
+    recipient_path = recipient_parsed.path
+
+    # generating digest
+    object_json = json.dumps(object.raw)
+    digest = base64.b64encode(
+        hashlib.sha256(
+            object_json.__str__().encode('utf-8')
+        ).digest()
+    )
+
+    signature_text = b'(request-target): post %s\ndigest: SHA-256=%s\nhost: %s\ndate: %s' % (
+        recipient_path.encode('utf-8'),
+        digest,
+        recipient_host.encode('utf-8'),
+        current_date.encode('utf-8')
+    )
+
+    raw_signature = private_key.sign(
+        signature_text,
+        padding.PKCS1v15(),
+        hashes.SHA256()
+    )
+
+    signature_header = 'keyId="%s",algorithm="rsa-sha256",headers="(request-target) digest host date",signature="%s"' % (
+        object.object.public_key,
+        base64.b64encode(raw_signature).decode('utf-8')
+    )
+
+    headers = {
+        'Date': current_date,
+        'Host': recipient_host,
+        'Digest': "SHA-256="+digest.decode('utf-8'),
+        'Signature': signature_header
+    }
+
+    return headers    

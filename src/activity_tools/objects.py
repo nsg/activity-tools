@@ -183,8 +183,13 @@ class WrapActivityStreamsObject:
 
 class InboxObject:
 
+    raw: dict
+    """
+    The raw data representing this object
+    """
+
     def __init__(self, data) -> None:
-        self.data = data
+        self.raw = data
         self.id = data['id']
         self.type = data['type'].lower()
         self._actor = data['actor']
@@ -199,7 +204,7 @@ class InboxObject:
         return Actor.fetch(actor_url=self._object)
 
     def run(self):
-        return self.data
+        return self.raw
 
 class Follow(InboxObject):
 

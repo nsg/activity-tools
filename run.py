@@ -20,7 +20,7 @@ from fastapi.responses import RedirectResponse, JSONResponse, FileResponse
 
 from src.activity_tools.objects import Actor, WrapActivityStreamsObject, Follow, Undo, Accept
 from src.activity_tools.misc import PublicKey, WebFinger
-from src.activity_tools.headers import ContentTypes, verify_signature
+from src.activity_tools.headers import ContentTypes, verify_signature, make_signature
 from src.activity_tools.inbox import Inbox
 from src.activity_tools.crypto import RSAKey
 
@@ -78,16 +78,15 @@ async def inbox(username: str, request: Request):
 
     if type(object) == Follow:
         accept = Accept(DOMAIN, username, object.run())
+        signature = make_signature(object)
 
-        signature = {}
+        r = requests.post(
+            object.actor.inbox,
+            data=json.dumps(accept.run()),
+            headers={ **ContentTypes.activity, **signature }
+        )
 
-        # r = requests.post(
-        #     object.actor.inbox,
-        #     data=json.dumps(accept.run()),
-        #     headers={ **ContentTypes.activity, **signature }
-        # )
-
-        # print(r.status_code, r.content)
+        print(r.status_code, r.content)
 
     elif type(object) == Undo:
         print("We got a undo request!")
