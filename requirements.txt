@@ -2,3 +2,4 @@ cryptography
 fastapi
 uvicorn
 requests
+pdoc

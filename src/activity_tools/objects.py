@@ -8,17 +8,39 @@ from cryptography.hazmat.primitives.serialization import load_pem_public_key
 from .misc import ImageAsset, PublicKey, Tags, Attachment
 
 class Actor:
+    """
+    Generic actor object. Use `create(...)` to create an actor of your own,
+    and `fetch(...)` to fetch an external actor.
+    """
+
+    username: str
+    """ The actors username"""
 
     def __init__(self) -> None:
+        """
+        This creates an empty actor object
+        """
         self.snake_pattern = re.compile(r'(?<!^)(?=[A-Z])')
 
-    def add_property_value(self, name, value):
+    def add_property_value(self, name, value) -> None:
+        """
+        Add a PropertyValue to the list of attachments. In Mastodon this
+        is used for the links in the profile.
+        """
         self.attachment.add_property_value(name, value)
 
-    def add_emoji(self, name, url):
+    def add_emoji(self, name, url) -> None:
+        """
+        Add a custom emoji to the tag list. If you for example like to
+        map `:foo:` to `/images/foo.png`, this is the function for you!
+        """
         self.tag.add_emoji(name, url)
 
     def create(self, domain: str, username: str, public_key_bytes: bytes) -> None:
+        """
+        Populate the actor object with data. This is a useful to create the
+        actor for a user. All fields can be overriden.
+        """
         self.domain = domain
         self.username = username
         self.public_key = None

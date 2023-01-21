@@ -12,6 +12,10 @@ build:
 upload:
 	.env/bin/twine upload dist/${LAST_WHL}
 
+.PHONY: docs
+docs:
+	pdoc src/activity_tools -o docs
+
 .env/bin/twine:
 	.env/bin/pip install -r requirements.txt
 

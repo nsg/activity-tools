@@ -3,6 +3,7 @@ import base64
 
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import padding
+from cryptography.hazmat.primitives.asymmetric import rsa
 
 from cryptography.exceptions import InvalidSignature
 
@@ -24,7 +25,16 @@ class ContentTypes:
             'Content-Type': "application/jrd+json"
         }
 
-class Signature():
+class SignatureBase:
+    """
+    foo
+    """
+
+    def __init__(self, key, from_actor: Actor, to_actor: Actor, message: dict) -> None:
+        if isinstance(key, rsa.RSAPublicKey):
+            pass
+
+class Signature(SignatureBase):
 
     def __init__(self, actor_url, headers, inbox_path) -> None:
         self.actor_url = actor_url
