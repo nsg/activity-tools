@@ -68,7 +68,13 @@ class Actor:
         self.attachment = Attachment()
         self.tag = Tags(self.domain)
 
-    def fetch(self, actor_url):
+    @classmethod
+    def fetch(cls, actor_url):
+        actor = Actor()
+        actor._fetch(actor_url)
+        return actor
+
+    def _fetch(self, actor_url):
         self.actor_raw = {}
 
         if not actor_url:
@@ -177,38 +183,33 @@ class WrapActivityStreamsObject:
 
 class InboxObject:
 
-    def __init__(self, data, signature) -> None:
+    def __init__(self, data) -> None:
         self.data = data
         self.id = data['id']
         self.type = data['type'].lower()
         self._actor = data['actor']
         self._object = data['object']
-        self.signature = signature
 
     @property
     def actor(self) -> Actor:
-        actor = Actor()
-        actor.fetch(actor_url=self._actor)
-        return actor
+        return Actor.fetch(actor_url=self._actor)
 
     @property
     def object(self) -> Actor:
-        actor = Actor()
-        actor.fetch(actor_url=self._object)
-        return actor
+        return Actor.fetch(actor_url=self._object)
 
     def run(self):
         return self.data
 
 class Follow(InboxObject):
 
-    def __init__(self, data, signature) -> None:
-        super().__init__(data, signature)
+    def __init__(self, data) -> None:
+        super().__init__(data)
 
 class Undo(InboxObject):
 
-    def __init__(self, data, signature) -> None:
-        super().__init__(data, signature)
+    def __init__(self, data) -> None:
+        super().__init__(data)
 
 class Accept:
 

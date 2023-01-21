@@ -2,7 +2,7 @@ LAST_WHL := "$(shell ls -1t dist | head -1)"
 
 .PHONY: run
 run: .env/bin/python
-	@.env/bin/python run.py
+	@.env/bin/uvicorn run:app --host 0.0.0.0 --workers 2
 
 .PHONY: build
 build:

@@ -1,19 +1,13 @@
-from .objects import Follow, Undo, InboxObject
-from .headers import Signature
+from .objects import Follow, Undo, InboxObject, Actor
 
 class Inbox:
 
-    def __init__(self, data, headers, inbox_path) -> None:
+    def __init__(self, data) -> None:
         self.data = data
 
         for key in ["@context", "object", "type"]:
             if not key in data:
                 raise Exception(f"Missing {key} in inbox message")
-
-        self.signature = Signature(data['actor'], headers, inbox_path)
-
-    def validate(self):
-        return self.signature.validate()
 
     def parse(self) -> InboxObject:
         func_name = f"type_{self.data['type'].lower()}"
@@ -24,7 +18,7 @@ class Inbox:
         return getattr(self, func_name)()
 
     def type_follow(self):
-        return Follow(self.data, self.signature)
+        return Follow(self.data)
 
     def type_undo(self):
-        return Undo(self.data, self.signature)
+        return Undo(self.data)
