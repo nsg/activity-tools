@@ -203,7 +203,10 @@ class InboxObject:
     def object(self) -> Actor:
         return Actor.fetch(actor_url=self._object)
 
-    def run(self):
+    def run(self) -> dict:
+        """
+        Return the raw JSON data
+        """
         return self.raw
 
 class Follow(InboxObject):
@@ -216,22 +219,51 @@ class Undo(InboxObject):
     def __init__(self, data) -> None:
         super().__init__(data)
 
-class Accept:
+class ActivityPubObject:
+    
+    id: str
+    """
+    The objects ID, this should be a unique identifier
+    """
 
-    def __init__(self, domain, username, object) -> None:
-        self.domain = domain
-        self.username = username
+    actor: Actor
+    """
+    The actor that created the message (the sender)
+    """
+
+    actor_url: str
+    """
+    A url to the actor that created the message (the sender)
+    """
+
+    object: object
+    """
+    A generic object representing the message/data. This may also
+    point to a target actor.
+    """
+
+    raw: dict
+    """
+    Object in raw unaltered form represented as a dict. This may be the
+    unaltered JSON document, but not always.
+    """
+
+class Accept(ActivityPubObject):
+
+    object: Follow
+    """ Object representing the Follow request """
+
+    def __init__(self, object: InboxObject) -> None:
+        self.id = f"{object.object.id}/accept/{str(uuid.uuid4())}"
         self.object = object
-
-        uuid_str = str(uuid.uuid4())
-        self.id = f"https://{self.domain}/users/{self.username}/accept/{uuid_str}"
-        self.actor = f"https://{self.domain}/users/{self.username}"
+        self.raw = object.run()
+        self.actor = object.object
 
     def run(self):
         return {
             "@context": "https://www.w3.org/ns/activitystreams",
             "id": self.id,
             "type": "Accept",
-            "actor": self.actor,
-            "object": self.object
+            "actor": self.object.object.id,
+            "object": self.object.run()
         }

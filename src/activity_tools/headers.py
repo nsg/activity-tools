@@ -156,10 +156,10 @@ def verify_signature(
 
     return True
 
-def make_signature(object: InboxObject):
+def make_signature(remote_inbox: str, message: str, sender_public_key_url: str):
     """
     This function generates a signature for the specified object.
-    """    
+    """
 
     # The following is to sign the HTTP request as defined in HTTP Signatures.
     private_key_text = open('/tmp/key.pem', 'rb').read() # load from file
@@ -172,15 +172,16 @@ def make_signature(object: InboxObject):
 
     current_date = datetime.utcnow().strftime('%a, %d %b %Y %H:%M:%S GMT')
 
-    recipient_parsed = urlparse(object.actor.inbox)
+    recipient_parsed = urlparse(remote_inbox)
     recipient_host = recipient_parsed.netloc
     recipient_path = recipient_parsed.path
 
     # generating digest
-    object_json = json.dumps(object.raw)
+    message_json = json.dumps(message)
+
     digest = base64.b64encode(
         hashlib.sha256(
-            object_json.__str__().encode('utf-8')
+            message_json.__str__().encode('utf-8')
         ).digest()
     )
 
@@ -198,7 +199,7 @@ def make_signature(object: InboxObject):
     )
 
     signature_header = 'keyId="%s",algorithm="rsa-sha256",headers="(request-target) digest host date",signature="%s"' % (
-        object.object.public_key,
+        sender_public_key_url,
         base64.b64encode(raw_signature).decode('utf-8')
     )
 

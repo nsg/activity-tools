@@ -56,9 +56,10 @@ def users(username: str):
 
 @app.get("/users/{username}/key")
 def users(username: str):
-    public_key = KEY.public_key
-    content = WrapActivityStreamsObject(PublicKey(DOMAIN, username, public_key)).run()
-    return JSONResponse(content=content, headers=ContentTypes.activity)
+    public_key = KEY.public_key.decode()
+    object = WrapActivityStreamsObject(PublicKey(DOMAIN, username, public_key))
+    print(object.run())
+    return JSONResponse(content=object.run(), headers=ContentTypes.activity)
 
 @app.post('/users/{username}/inbox')
 async def inbox(username: str, request: Request):
@@ -77,8 +78,12 @@ async def inbox(username: str, request: Request):
     object = inbox.parse()
 
     if type(object) == Follow:
-        accept = Accept(DOMAIN, username, object.run())
-        signature = make_signature(object)
+        follow = object
+        accept = Accept(follow)
+
+        respond_to_url = follow.actor.inbox
+        public_key_url = follow.object.public_key["id"]
+        signature = make_signature(respond_to_url, accept.run(), public_key_url)
 
         r = requests.post(
             object.actor.inbox,
